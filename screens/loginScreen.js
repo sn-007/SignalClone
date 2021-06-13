@@ -1,7 +1,8 @@
-import React, {useState} from 'react';
+import React, {useState,useEffect} from 'react';
 import { View, StyleSheet, Text, Image, KeyboardAvoidingView } from 'react-native';
 import { Input, Button } from 'react-native-elements';
 import {StatusBar} from "expo-status-bar"
+import {db,auth} from "./firebase"
 
 
 
@@ -10,11 +11,24 @@ const loginScreen = ({navigation}) => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  useEffect(()=> {
+    const unsubscribe = auth.onAuthStateChanged((userObject)=>{
+      if(userObject){
+        navigation.replace('Home');
+      }
+      else{console.log("anta scene ledu");}
+
+    });
+    return unsubscribe;
+
+  },[]);
 
 
   const triggerLogin = () => {
+    auth.signInWithEmailAndPassword(email,password)
+    .then().catch((error)=> {alert(error.message)})
     
-    console.log("loggedin");
   }
 
 
@@ -29,6 +43,7 @@ const loginScreen = ({navigation}) => {
           placeholder="Email"
           autoFocus={true}
           leftIcon={{ type: 'Feather', name: 'mail' }}
+          value={email}
           onChangeText={(text)=> {setEmail(text)}}
 
 
@@ -40,6 +55,7 @@ const loginScreen = ({navigation}) => {
           leftIcon={{ type: 'EvilIcons', name: 'lock' }}
           secureTextEntry={true}
           onChangeText={(text)=> {setPassword(text)}}
+          value={password}
 
           
         />
@@ -54,9 +70,7 @@ const loginScreen = ({navigation}) => {
         title="Register" 
         containerStyle={styles.button} 
         type="outline" 
-        onPress={()=> navigation.navigate("Register") }/>
-
-
+        onPress={()=> navigation.push("Register") }/>
 
     </KeyboardAvoidingView>
 
