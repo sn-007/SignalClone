@@ -1,17 +1,25 @@
-import React, { useEffect, useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { View, StyleSheet, Text, ScrollView } from 'react-native';
 import { StatusBar } from "expo-status-bar";
 import CustomListItem from "../components/listItem"
 import { Avatar } from 'react-native-elements/dist/avatar/Avatar';
-import { TouchableOpacity, TouchableHighlight } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { auth } from './firebase';
+import { TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { auth, db } from './firebase';
+import { SafeAreaView } from 'react-native';
 
 
 
 
 const homeScreen = ({ navigation }) => {
+
+  const [chats, setChats] = useState([]);
+
+  const triggerLogout = () => {
+    auth.signOut()
+      .then(() => { navigation.replace("Login") })
+      .catch((error) => { alert(error.message) })
+  }
 
   useLayoutEffect(() => {
     navigation.setOptions(
@@ -24,28 +32,28 @@ const homeScreen = ({ navigation }) => {
           </Text>
         ),
         headerLeft: () => (
-          <TouchableOpacity>
+          <TouchableOpacity onPress={triggerLogout}>
             <Avatar
               rounded
-              source={{uri:auth?.currentUser?.photoURL,}}
+              source={{ uri: auth?.currentUser?.photoURL, }}
               activeOpacity={0.7}
-              containerStyle={{marginLeft:5}}
+              containerStyle={{ marginLeft: 5 }}
             />
           </TouchableOpacity>
         ),
         headerRight: () => (
-          <View style={{flexDirection:"row"}}>
+          <View style={{ flexDirection: "row" }}>
 
-          <TouchableOpacity style={{marginRight:25}}>
-            <Feather name="camera" size={30} color="black" />
-          </TouchableOpacity>
+            <TouchableOpacity style={{ marginRight: 25 }}>
+              <Feather name="camera" size={30} color="black" />
+            </TouchableOpacity>
 
-          <TouchableOpacity style={{marginRight:10}}>
-          <MaterialCommunityIcons name="pencil" size={30} color="black" />
-          </TouchableOpacity>
+            <TouchableOpacity style={{ marginRight: 10 }} onPress={() => { navigation.push("NewChat") }}>
+              <MaterialCommunityIcons name="pencil" size={30} color="black" />
+            </TouchableOpacity>
 
           </View>
-          
+
         ),
 
 
@@ -55,23 +63,40 @@ const homeScreen = ({ navigation }) => {
 
   }, [{ navigation }]);
 
+  useEffect(() => {
+    const unsubscribe = db.collection('chats')
+      .onSnapshot(snapshot =>
+      (
+        setChats(snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })))
+      )
+      );
+    //chats.map(chat=>(console.log(chat.data.chatName)))       
+    return unsubscribe;
+
+  }, []);
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+    <ScrollView style={styles.container}>
       <StatusBar style="auto" />
-      <ScrollView>
+      
+        {
+           chats.map(( {id,data:{chatName}} ) => (<CustomListItem key={id} id={id} chatName={chatName}  />))
+        }
+          
+        
 
-        <CustomListItem />
+      
 
-      </ScrollView>
-
-    </View>
+    </ScrollView>
+    </SafeAreaView>
 
   );
 
 }
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    height:"100%"
 
 
   },
