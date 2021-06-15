@@ -8,6 +8,7 @@ import loginScreen from './screens/loginScreen'
 import registerScreen from './screens/registerScreen'
 import homeScreen from './screens/homeScreen'
 import newChat from './screens/newChat';
+import chatScreen from './screens/chatScreen';
 
 
 
@@ -26,6 +27,7 @@ function App() {
         <Stack.Screen name="Register" component={registerScreen} />
         <Stack.Screen name="Home" component={homeScreen} />
         <Stack.Screen name="NewChat" component={newChat} />
+        <Stack.Screen name="ChatScreen" component={chatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

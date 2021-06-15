@@ -81,12 +81,9 @@ const homeScreen = ({ navigation }) => {
       <StatusBar style="auto" />
       
         {
-           chats.map(( {id,data:{chatName}} ) => (<CustomListItem key={id} id={id} chatName={chatName}  />))
+           chats.map((chat) => (<CustomListItem key={chat.id} id={chat.id} chatName={chat.data.chatName} navigation={navigation}  />))
         }
-          
-        
-
-      
+               
 
     </ScrollView>
     </SafeAreaView>
@@ -96,8 +93,7 @@ const homeScreen = ({ navigation }) => {
 }
 const styles = StyleSheet.create({
   container: {
-    height:"100%"
-
+    flex:1
 
   },
 });
