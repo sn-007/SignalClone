@@ -2,7 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 
 import loginScreen from './screens/loginScreen'
 import registerScreen from './screens/registerScreen'
@@ -16,7 +16,9 @@ const Stack = createStackNavigator();
 const topBarOptions ={
   headerStyle :{backgroundColor:"#2c6BED"},
   headerTitleStyle:{color:"white"},
-  headerTintColor:"white"
+  headerTintColor:"white",
+  cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
+
 }
 
 function App() {
