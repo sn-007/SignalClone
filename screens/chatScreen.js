@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Avatar, Input } from 'react-native-elements';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,31 +13,29 @@ import * as firebase from 'firebase'
 
 const chatScreen = ({ route, navigation }) => {
 
-    const [messages,setMessages] = useState([]);
-    const [input,setInput] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState("");
 
     const triggerPostMessage = async () => {
         const messageObject = {
-            owner:auth.currentUser.displayName,
-            photoUrl:auth.currentUser.photoURL,
-            ownerEmail:auth.currentUser.email,
-            message:input,
-            timestamp:firebase.firestore.FieldValue.serverTimestamp()
+            owner: auth.currentUser.displayName,
+            photoUrl: auth.currentUser.photoURL,
+            ownerEmail: auth.currentUser.email,
+            message: input,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
         setInput("")
-        try{
+        try {
             //alert(messageObject.timestamp)
 
             const res = await db.collection('chats').doc(route.params.id).collection('messages').add(messageObject);
         }
-        catch(error)
-        {
+        catch (error) {
             alert(error);
         }
     }
 
-
-
+   
     useLayoutEffect(() => {
         navigation.setOptions(
             {
@@ -72,51 +70,126 @@ const chatScreen = ({ route, navigation }) => {
 
     }, [navigation]);
 
+
+    useEffect(() => {
+
+        const unsubscribe = db.collection('chats').doc(route.params.id).collection('messages').orderBy("timestamp","desc")
+          .onSnapshot( (snapshot) => (
+              setMessages(snapshot.docs.map(doc => ({id:doc.id, data:doc.data()})))
+          )
+
+          );
+
+        
+          return unsubscribe;
+
+    }, [route]);
+
+
     return (
-        <KeyboardAvoidingView  style= {styles.container}>
+        <KeyboardAvoidingView style={styles.container}>
             <StatusBar style="light" />
 
-            <ScrollView>
-                
+            <ScrollView  >
 
-                
+                {
+                    messages.map
+                    (
+                        message=>
+                        (
+                            
+                            message.data.ownerEmail === auth.currentUser.email?
+                                (
+                                    <View style={styles.owner} key ={message.id}>
+
+                                        <Text style = {styles.ownerText}>{message.data.message}</Text>
+
+
+                                    </View>
+                                )
+                                :
+                                (
+                                    <View style={styles.notOwner} key ={message.id}>
+                                        
+                                        <Text style = {styles.notOwnerText}>{message.data.message}</Text>
+
+                                    </View>
+
+                                )
+                        )
+                    )
+                }
+
 
             </ScrollView>
 
             <View style={styles.bottom}>
                 <Input
-                    leftIcon= {()=> (<SimpleLineIcons name="emotsmile" size={24} color="black" />)} 
-                    leftIconContainerStyle={{paddingLeft:10}}
+                    leftIcon={() => (<SimpleLineIcons name="emotsmile" size={24} color="black" />)}
+                    leftIconContainerStyle={{ paddingLeft: 10 }}
                     placeholder="Enter Message"
                     inputContainerStyle={styles.input}
-                    containerStyle={{width:"90%"}}
-                    value ={input}
-                    onChangeText={(text)=> {setInput(text)}}
+                    containerStyle={{ width: "90%" }}
+                    value={input}
+                    onChangeText={(text) => { setInput(text) }}
                 />
-                <TouchableOpacity style={{paddingBottom:23}} onPress={triggerPostMessage}>
-                <Ionicons name="send" size={35} color="#2c6BED" />
+                <TouchableOpacity style={{ paddingBottom: 23 }} onPress={triggerPostMessage}>
+                    <Ionicons name="send" size={35} color="#2c6BED" />
                 </TouchableOpacity>
 
             </View>
 
-            
+
         </KeyboardAvoidingView>
     )
 
 }
 export default chatScreen;
 const styles = StyleSheet.create({
-    container:{
-        flex:1
+    container: {
+        flex: 1
     },
-    bottom:{
-        flexDirection:"row",
-        alignItems:"center",
+    bottom: {
+        flexDirection: "row",
+        alignItems: "center",
     },
-    input:{
-        backgroundColor:"#D3D3D3",
-        borderRadius:30,
-        borderBottomColor:"#D3D3D3"
+    input: {
+        backgroundColor: "#D3D3D3",
+        borderRadius: 30,
+        borderBottomColor: "#D3D3D3"
+
+    },
+    owner:{
+        alignItems:'flex-end',
+        backgroundColor:"#2c6BED",
+        marginBottom:2,
+        marginTop:2,
+        alignSelf:"flex-end",
+        padding:10,
+        borderRadius:20
+
+    },
+    notOwner:{
+        alignItems:'flex-start',
+        backgroundColor:"#2c6BED",
+        marginBottom:2,
+        marginTop:2,
+        alignSelf:"flex-start",
+        padding:10,
+        borderRadius:20
+    },
+
+    ownerText:{
+        color:"black",
+        fontSize:18,
+        marginRight:7,
+
+    },
+    notOwnerText:{
+        color:"black",
+        fontSize:18,
+        marginRight:7,
 
     }
+
 })
