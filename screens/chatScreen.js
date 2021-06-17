@@ -10,6 +10,7 @@ import { KeyboardAvoidingView } from 'react-native';
 import { SimpleLineIcons } from '@expo/vector-icons';
 import { auth, db } from './firebase';
 import * as firebase from 'firebase'
+import { Platform } from 'react-native';
 
 const chatScreen = ({ route, navigation }) => {
 
@@ -73,7 +74,7 @@ const chatScreen = ({ route, navigation }) => {
 
     useEffect(() => {
 
-        const unsubscribe = db.collection('chats').doc(route.params.id).collection('messages').orderBy("timestamp","desc")
+        const unsubscribe = db.collection('chats').doc(route.params.id).collection('messages').orderBy("timestamp")
           .onSnapshot( (snapshot) => (
               setMessages(snapshot.docs.map(doc => ({id:doc.id, data:doc.data()})))
           )
@@ -87,8 +88,14 @@ const chatScreen = ({ route, navigation }) => {
 
 
     return (
-        <KeyboardAvoidingView style={styles.container}>
+        <KeyboardAvoidingView style={styles.container} 
+            behavior={Platform.OS==='ios'? "padding": "height"}
+            keyboardVerticalOffset={80}
+        >
             <StatusBar style="light" />
+
+
+            <>
 
             <ScrollView  >
 
@@ -102,7 +109,19 @@ const chatScreen = ({ route, navigation }) => {
                                 (
                                     <View style={styles.owner} key ={message.id}>
 
+                                        <View style={{flexDirection:"column", justifyContent:"space-evenly", maxWidth:310}}>
+                                        <Text style = {[styles.topname, {color:"white"}]}>{message.data.owner}</Text>    
                                         <Text style = {styles.ownerText}>{message.data.message}</Text>
+                                        </View>
+
+                                        <Avatar 
+                                            rounded
+                                            source={{uri:message.data.photoUrl}}
+                                            containerStyle={styles.avatar}
+                                            size={30}
+                                        
+                                        />
+
 
 
                                     </View>
@@ -110,8 +129,18 @@ const chatScreen = ({ route, navigation }) => {
                                 :
                                 (
                                     <View style={styles.notOwner} key ={message.id}>
-                                        
+
+                                        <View style={{flexDirection:"column", justifyContent:"space-evenly", maxWidth:310}}>
+                                        <Text style = {[styles.topname, {color:"black"}]}>{message.data.owner}</Text> 
                                         <Text style = {styles.notOwnerText}>{message.data.message}</Text>
+                                        </View>
+                                        <Avatar 
+                                            rounded
+                                            source={{uri:message.data.photoUrl}}
+                                            containerStyle={styles.avatar}
+                                            size={30}
+                                        
+                                        />
 
                                     </View>
 
@@ -122,6 +151,7 @@ const chatScreen = ({ route, navigation }) => {
 
 
             </ScrollView>
+            </>
 
             <View style={styles.bottom}>
                 <Input
@@ -154,9 +184,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     input: {
-        backgroundColor: "#D3D3D3",
+        backgroundColor: "#DCDCDC",
         borderRadius: 30,
-        borderBottomColor: "#D3D3D3"
+        borderBottomColor: "#DCDCDC"
 
     },
     owner:{
@@ -166,30 +196,43 @@ const styles = StyleSheet.create({
         marginTop:2,
         alignSelf:"flex-end",
         padding:10,
-        borderRadius:20
+        borderRadius:20,
+        flexDirection:"row",
+        
 
     },
     notOwner:{
         alignItems:'flex-start',
-        backgroundColor:"#2c6BED",
+        backgroundColor:"#D3D3D3",
         marginBottom:2,
         marginTop:2,
         alignSelf:"flex-start",
         padding:10,
-        borderRadius:20
+        borderRadius:20,
+        flexDirection:"row"
     },
 
     ownerText:{
-        color:"black",
-        fontSize:18,
+        color:"white",
+        fontSize:20,
         marginRight:7,
+        
 
     },
     notOwnerText:{
         color:"black",
-        fontSize:18,
+        fontSize:20,
         marginRight:7,
 
+    },
+    avatar:{
+        alignSelf:"flex-end",
+        justifyContent:"flex-end"
+        
+    },
+    topname:{
+        fontSize:8,
+        
     }
 
 })
