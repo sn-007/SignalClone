@@ -1,3 +1,3 @@
-### Clone of the New Siginal APP
+### Clone of the New Signal APP
 #### React Native
 #### Fire-Base
