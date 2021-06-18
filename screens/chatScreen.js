@@ -13,21 +13,64 @@ import * as firebase from 'firebase'
 import { Platform } from 'react-native';
 import { Keyboard } from 'react-native';
 
+
 const chatScreen = ({ route, navigation }) => {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollViewRef = useRef();
+  const [keyboardStatus, setKeyboardStatus] = useState(undefined);
+
+
+  useEffect(() => {
+    Keyboard.addListener("keyboardDidShow", _keyboardDidShow);
+    Keyboard.addListener("keyboardDidHide", _keyboardDidHide);
+
+    // cleanup function
+    return () => {
+      Keyboard.removeListener("keyboardDidShow", _keyboardDidShow);
+      Keyboard.removeListener("keyboardDidHide", _keyboardDidHide);
+    };
+  }, []);
+  const _keyboardDidShow = () => { setKeyboardStatus("Keyboard Shown"); scrollViewRef.current.scrollToEnd({ animated: true }); }
+  const _keyboardDidHide = () => { setKeyboardStatus("Keyboard Hidden"); scrollViewRef.current.scrollToEnd({ animated: true }); }
+
+  useLayoutEffect(() => { scrollViewRef.current.scrollToEnd({ animated: true }); }, [keyboardStatus])
+
+  const displayDate = () => {
+    let d = new Date();
+    let day = d.getDate();
+    let month = d.getMonth() + 1;
+    let minutes = d.getMinutes();
+    let hours = d.getHours();
+    if (day < 10) { day = "0" + d.getDate(); }
+    if (month < 10) { month = "0" + eval(d.getMonth() + 1); }
+    return  day + "/" + month + "/" + d.getFullYear()
+  }
+  const displayTime = () => {
+    let d = new Date();
+    let minutes = d.getMinutes();
+    let hours = d.getHours();
+    let ampm = "AM"
+    if(hours > 12) {ampm = "PM"; hours = eval(d.getHours() -12); }
+    return  hours + ":" + minutes + " " + ampm
+  }
+
+
 
   const triggerPostMessage = async () => {
+
+
     const messageObject = {
       owner: auth.currentUser.displayName,
       photoUrl: auth.currentUser.photoURL,
       ownerEmail: auth.currentUser.email,
       message: input,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      displayTime: displayTime(),
+      displayDate: displayDate()
     };
-    if(messageObject.message===""){return}
+    if (messageObject.message === "") { return }
     setInput("")
     try {
       //alert(messageObject.timestamp)
@@ -99,69 +142,72 @@ const chatScreen = ({ route, navigation }) => {
       <StatusBar style="light" />
 
 
-      <>
-
-        <ScrollView
-          ref={scrollViewRef}
-          onContentSizeChange={() => { scrollViewRef.current.scrollToEnd({ animated: true }) }}
-          style={{flex:1}}
-
-        >
 
 
-          {
-            messages.map
+      <ScrollView
+        ref={scrollViewRef}
+        onContentSizeChange={() => { scrollViewRef.current.scrollToEnd({ animated: true }) }}
+        style={{ flex: 1 }}
+
+      >
+
+
+        {
+          messages.map
+            (
+              message =>
               (
-                message =>
-                (
 
-                  message.data.ownerEmail === auth.currentUser.email ?
-                    (
-                      <View style={styles.owner} key={message.id}>
+                message.data.ownerEmail === auth.currentUser.email ?
+                  (
+                    <View style={styles.owner} key={message.id}>
 
-                        <View style={{ flexDirection: "column", justifyContent: "space-evenly", maxWidth: 310 }}>
-                          <Text style={styles.ownerText}>{message.data.message}</Text>
-                          <Text style={[styles.topname, { color: "black" }]}>{message.data.owner}</Text>
-                        </View>
+                      <View style={{ flexDirection: "column", justifyContent: "space-evenly", maxWidth: 310 }}>
+                        <Text style={styles.ownerText}>{message.data.message}</Text>
+                        <Text style={[styles.topname, { color: "black" }]}>{message.data.displayTime}</Text>
 
-                        <Avatar
-                          rounded
-                          source={{ uri: message.data.photoUrl }}
-                          containerStyle={styles.avatar}
-                          size={30}
-
-                        />
-
-
-
-                      </View>
-                    )
-                    :
-                    (
-                      <View style={styles.notOwner} key={message.id}>
-
-                        <View style={{ flexDirection: "column", justifyContent: "space-evenly", maxWidth: 310 }}>
-                          <Text style={styles.notOwnerText}>{message.data.message}</Text>
-                          <Text style={[styles.topname, { color: "white" }]}>{message.data.owner}</Text>
-                        </View>
-                        <Avatar
-                          rounded
-                          source={{ uri: message.data.photoUrl }}
-                          containerStyle={styles.avatar}
-                          size={30}
-
-                        />
-
+                        {/* <Text style={[styles.topname, { color: "black" }]}>{message.data.timestamp.toString()}</Text> */}
                       </View>
 
-                    )
-                )
+                      {/* <Avatar
+                        rounded
+                        source={{ uri: message.data.photoUrl }}
+                        containerStyle={styles.avatar}
+                        size={30}
+
+                      /> */}
+
+
+
+                    </View>
+                  )
+                  :
+                  (
+                    <View style={styles.notOwner} key={message.id}>
+
+                      <View style={{ flexDirection: "column", justifyContent: "space-evenly", maxWidth: 310 }}>
+                        <Text style={[styles.topname, { color: "white" }]}>{message.data.owner}</Text>
+                        <Text style={styles.notOwnerText}>{message.data.message}</Text>
+                        <Text style={[styles.topname, { color: "white" }]}>{message.data.displayTime}</Text>
+                      </View>
+                      <Avatar
+                        rounded
+                        source={{ uri: message.data.photoUrl }}
+                        containerStyle={styles.avatar}
+                        size={30}
+
+                      />
+
+                    </View>
+
+                  )
               )
-          }
+            )
+        }
 
 
-        </ScrollView>
-      </>
+      </ScrollView>
+
 
       <View style={styles.bottom}>
         <Input
@@ -169,10 +215,9 @@ const chatScreen = ({ route, navigation }) => {
           leftIconContainerStyle={{ paddingLeft: 10 }}
           placeholder="Enter Message"
           inputContainerStyle={styles.input}
-          containerStyle={{ width: "90%", marginTop:10, marginBottom:-10 }}
+          containerStyle={{ width: "90%", marginTop: 10, marginBottom: -10 }}
           value={input}
-          onChangeText={(text) => { scrollViewRef.current.scrollToEnd({ animated: true });setInput(text); }}
-          onFocus={()=>{scrollViewRef.current.scrollToEnd({ animated: true });}}
+          onChangeText={(text) => { scrollViewRef.current.scrollToEnd({ animated: true }); setInput(text); }}
           multiline={true}
         />
         <TouchableOpacity style={{ paddingBottom: 1 }} onPress={triggerPostMessage}>

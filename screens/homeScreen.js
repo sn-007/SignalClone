@@ -7,6 +7,7 @@ import { TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { auth, db } from './firebase';
 import { SafeAreaView } from 'react-native';
+import { Dimensions } from 'react-native';
 
 
 
@@ -14,7 +15,6 @@ import { SafeAreaView } from 'react-native';
 const homeScreen = ({ navigation }) => {
 
   const [chats, setChats] = useState([]);
-
   const triggerLogout = () => {
     auth.signOut()
       .then(() => { navigation.replace("Login") })
@@ -45,7 +45,7 @@ const homeScreen = ({ navigation }) => {
           <View style={{ flexDirection: "row" }}>
 
             <TouchableOpacity style={{ marginRight: 25 }}>
-              <Feather name="camera" size={30} color="black" />
+              <Feather name="camera" size={30} color="black" onPress={()=>{alert(Dimensions.get('screen').width)}} />
             </TouchableOpacity>
 
             <TouchableOpacity style={{ marginRight: 10 }} onPress={() => { navigation.push("NewChat") }}>
