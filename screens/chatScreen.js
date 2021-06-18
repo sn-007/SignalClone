@@ -19,7 +19,10 @@ const chatScreen = ({ route, navigation }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollViewRef = useRef();
-  const [keyboardStatus, setKeyboardStatus] = useState(undefined);
+  const [keyboardStatus, setKeyboardStatus] = useState("close");
+  let recentChatEmail = '';
+  let colors =["green","#fa25ef"]
+  let it = colors[0];
 
 
   useEffect(() => {
@@ -32,8 +35,8 @@ const chatScreen = ({ route, navigation }) => {
       Keyboard.removeListener("keyboardDidHide", _keyboardDidHide);
     };
   }, []);
-  const _keyboardDidShow = () => { setKeyboardStatus("Keyboard Shown"); scrollViewRef.current.scrollToEnd({ animated: true }); }
-  const _keyboardDidHide = () => { setKeyboardStatus("Keyboard Hidden"); scrollViewRef.current.scrollToEnd({ animated: true }); }
+  const _keyboardDidShow = () => { scrollViewRef.current.scrollToEnd({ animated: true }); setKeyboardStatus("open"); }
+  const _keyboardDidHide = () => { scrollViewRef.current.scrollToEnd({ animated: true }); setKeyboardStatus("close"); }
 
   useLayoutEffect(() => { scrollViewRef.current.scrollToEnd({ animated: true }); }, [keyboardStatus])
 
@@ -41,21 +44,53 @@ const chatScreen = ({ route, navigation }) => {
     let d = new Date();
     let day = d.getDate();
     let month = d.getMonth() + 1;
-    let minutes = d.getMinutes();
-    let hours = d.getHours();
     if (day < 10) { day = "0" + d.getDate(); }
     if (month < 10) { month = "0" + eval(d.getMonth() + 1); }
-    return  day + "/" + month + "/" + d.getFullYear()
+    return day + "/" + month + "/" + d.getFullYear()
   }
   const displayTime = () => {
     let d = new Date();
     let minutes = d.getMinutes();
     let hours = d.getHours();
     let ampm = "AM"
-    if(hours > 12) {ampm = "PM"; hours = eval(d.getHours() -12); }
-    return  hours + ":" + minutes + " " + ampm
+    if (hours > 12) { ampm = "PM"; hours = eval(d.getHours() - 12); }
+    if(minutes < 10) {minutes = '0'+d.getMinutes()}
+    return hours + ":" + minutes + " " + ampm
+  }
+  const combineDateAndTime = (date, time) => {
+    let ans = date + ", " + time
+    return ans;
+  }
+  const checkSameDate = (date) => {
+
+    let today = displayDate();
+    let xtoday = today.split("/");
+    let xdate = date.split("/")
+    today = xtoday[2] + "/" + xtoday[1] + "/" + xtoday[0]
+    date = xdate[2] + "/" + xdate[1] + "/" + xdate[0]
+    if (date < today) { return 0; }
+    else { return 1; }
+
+
+
+
   }
 
+  const checkOwner= (email,flag) => {;
+    if(email === recentChatEmail ){
+      return 1;
+    }
+    recentChatEmail = email;
+    
+    if(flag === "notOwner")
+    {
+    if(it == colors[0]) it = colors[1];
+    else it = colors[0]
+    }
+    return 0;
+    
+    
+  }
 
 
   const triggerPostMessage = async () => {
@@ -68,7 +103,7 @@ const chatScreen = ({ route, navigation }) => {
       message: input,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       displayTime: displayTime(),
-      displayDate: displayDate()
+      displayDate: displayDate(),
     };
     if (messageObject.message === "") { return }
     setInput("")
@@ -159,23 +194,26 @@ const chatScreen = ({ route, navigation }) => {
               (
 
                 message.data.ownerEmail === auth.currentUser.email ?
+                
                   (
                     <View style={styles.owner} key={message.id}>
-
+                      
                       <View style={{ flexDirection: "column", justifyContent: "space-evenly", maxWidth: 310 }}>
                         <Text style={styles.ownerText}>{message.data.message}</Text>
-                        <Text style={[styles.topname, { color: "black" }]}>{message.data.displayTime}</Text>
+                        {
+                          
+                          checkSameDate(message.data.displayDate) === 1 ?
+                            (<Text style={[styles.topname, { color: "black" }]}>{message.data.displayTime}</Text>)
+                            :
+                            (<Text style={[styles.topname, { color: "black" }]}>{combineDateAndTime(message.data.displayDate, message.data.displayTime)}</Text>)
+                        }
+                        {
+                          checkOwner(message.data.ownerEmail, "owner") ==="x"?null:null
+                        }
 
-                        {/* <Text style={[styles.topname, { color: "black" }]}>{message.data.timestamp.toString()}</Text> */}
+
                       </View>
 
-                      {/* <Avatar
-                        rounded
-                        source={{ uri: message.data.photoUrl }}
-                        containerStyle={styles.avatar}
-                        size={30}
-
-                      /> */}
 
 
 
@@ -186,9 +224,24 @@ const chatScreen = ({ route, navigation }) => {
                     <View style={styles.notOwner} key={message.id}>
 
                       <View style={{ flexDirection: "column", justifyContent: "space-evenly", maxWidth: 310 }}>
-                        <Text style={[styles.topname, { color: "white" }]}>{message.data.owner}</Text>
+                        {
+                          checkOwner(message.data.ownerEmail, "notOwner")===0?
+
+                        (<Text style={[styles.topname, { fontWeight:"bold", color: it, fontSize:15, paddingBottom:10, }]}>{message.data.owner}</Text>)
+                        :
+                        null
+
+                        }
+
                         <Text style={styles.notOwnerText}>{message.data.message}</Text>
-                        <Text style={[styles.topname, { color: "white" }]}>{message.data.displayTime}</Text>
+                        {
+
+                          checkSameDate(message.data.displayDate) === 1 ?
+                            (<Text style={[styles.topname, { color: "black" }]}>{message.data.displayTime}</Text>)
+                            :
+                            (<Text style={[styles.topname, { color: "black" }]}>{combineDateAndTime(message.data.displayDate, message.data.displayTime)}</Text>)
+                        }
+
                       </View>
                       <Avatar
                         rounded
@@ -249,8 +302,9 @@ const styles = StyleSheet.create({
   owner: {
     alignItems: 'flex-end',
     backgroundColor: "#D3D3D3",
-    marginBottom: 2,
-    marginTop: 2,
+    marginBottom: 3,
+    marginTop: 3,
+    marginRight:10,
     alignSelf: "flex-end",
     padding: 10,
     borderRadius: 15,
@@ -260,9 +314,11 @@ const styles = StyleSheet.create({
   },
   notOwner: {
     alignItems: 'flex-start',
-    backgroundColor: "#2c6BED",
-    marginBottom: 2,
-    marginTop: 2,
+    // backgroundColor: "#2c6BED",
+    backgroundColor: "#C0C0C0",
+    marginBottom: 3,
+    marginTop: 3,
+    marginLeft:10,
     alignSelf: "flex-start",
     padding: 10,
     borderRadius: 15,
@@ -271,14 +327,14 @@ const styles = StyleSheet.create({
 
   ownerText: {
     color: "black",
-    fontSize: 20,
+    fontSize: 14,
     marginRight: 7,
 
 
   },
   notOwnerText: {
-    color: "white",
-    fontSize: 20,
+    color: "black",
+    fontSize: 15,
     marginRight: 7,
 
   },
